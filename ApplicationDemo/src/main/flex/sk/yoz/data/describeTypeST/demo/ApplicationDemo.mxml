@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009" 
+               xmlns:s="library://ns.adobe.com/flex/spark" 
+               xmlns:mx="library://ns.adobe.com/flex/mx"
+               minWidth="955" minHeight="600" applicationComplete="init()">
+    <fx:Script>
+        <![CDATA[
+            import sk.yoz.data.describeTypeST.Descriptor;
+            import sk.yoz.data.describeTypeST.DescriptorUtils;
+            import sk.yoz.data.describeTypeST.demo.valueObjects.VO1;
+            import sk.yoz.data.describeTypeST.demo.valueObjects.VO2;
+            import sk.yoz.data.describeTypeST.elements.AbstractEntry;
+            import sk.yoz.data.describeTypeST.elements.AbstractProperty;
+            import sk.yoz.data.describeTypeST.elements.AbstractType;
+            import sk.yoz.data.describeTypeST.elements.Metadata;
+            
+            import spark.components.List;
+            
+            private var typeDescriptor:Descriptor = new Descriptor;
+            
+            private function init():void
+            {
+                var type:AbstractType = describe(List);
+                var list:Vector.<Metadata> = DescriptorUtils.getClassMetadata(type, 
+                    function(metadata:Metadata):Boolean
+                    {
+                        return metadata.name == "Event";
+                    });
+                for each(var metadata:Metadata in list)
+                    trace(metadata.name, metadata.arg[0].value, metadata.arg[1].value);
+                
+                /*
+                var list:Vector.<AbstractEntry> = DescriptorUtils.getEntrieWithMetadata(type1, 
+                    function(entry:AbstractEntry, metadata:Metadata):Boolean
+                    {
+                        return metadata.name == "Event";
+                    });
+                trace("*");
+                for each(var entry:AbstractEntry in list)
+                    trace(entry.name);
+                */
+            }
+            
+            private function describe(value:Object):AbstractType
+            {
+                var d0:Date = new Date;
+                var result:AbstractType = typeDescriptor.describe(value);
+                trace(new Date().time - d0.time + "ms");
+                
+                var bytes:ByteArray = new ByteArray;
+                bytes.writeObject(result);
+                trace(bytes.length + "bytes");
+                
+                return result;
+            }
+        ]]>
+    </fx:Script>
+    <s:layout>
+        <s:VerticalLayout/>
+    </s:layout>
+    
+</s:Application>

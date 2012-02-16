@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<flexLibProperties includeAllClasses="true" useMultiPlatformConfig="false" version="3">
+  <includeClasses>
+    <classEntry path="sk.yoz.data.describeTypeST.Descriptor"/>
+    <classEntry path="sk.yoz.data.describeTypeST.elements.AbstractType"/>
+    <classEntry path="sk.yoz.data.describeTypeST.elements.ExtendsClass"/>
+    <classEntry path="sk.yoz.data.describeTypeST.elements.Accessor"/>
+    <classEntry path="sk.yoz.data.describeTypeST.elements.Factory"/>
+    <classEntry path="sk.yoz.data.describeTypeST.elements.Variable"/>
+    <classEntry path="sk.yoz.data.describeTypeST.elements.Metadata"/>
+    <classEntry path="sk.yoz.data.describeTypeST.elements.Arg"/>
+    <classEntry path="sk.yoz.data.describeTypeST.elements.Method"/>
+    <classEntry path="sk.yoz.data.describeTypeST.elements.Parameter"/>
+    <classEntry path="sk.yoz.data.describeTypeST.elements.Constant"/>
+    <classEntry path="sk.yoz.data.describeTypeST.elements.ImplementsInterface"/>
+    <classEntry path="sk.yoz.data.describeTypeST.DescriptorUtils"/>
+    <classEntry path="sk.yoz.data.describeTypeST.elements.AbstractFactory"/>
+    <classEntry path="sk.yoz.data.describeTypeST.elements.TypeInstance"/>
+    <classEntry path="sk.yoz.data.describeTypeST.elements.TypeClass"/>
+    <classEntry path="sk.yoz.data.describeTypeST.elements.AbstractProperty"/>
+    <classEntry path="sk.yoz.data.describeTypeST.elements.AbstractEntry"/>
+  </includeClasses>
+  <includeResources/>
+  <namespaceManifests/>
+</flexLibProperties>
