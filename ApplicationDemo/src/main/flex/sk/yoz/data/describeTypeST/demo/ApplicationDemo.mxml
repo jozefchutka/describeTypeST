@@ -2,61 +2,117 @@
 <s:Application xmlns:fx="http://ns.adobe.com/mxml/2009" 
                xmlns:s="library://ns.adobe.com/flex/spark" 
                xmlns:mx="library://ns.adobe.com/flex/mx"
-               minWidth="955" minHeight="600" applicationComplete="init()">
+               applicationComplete="init()" xmlns:sparkTree="com.sparkTree.*" xmlns:demo="sk.yoz.data.describeTypeST.demo.*">
     <fx:Script>
         <![CDATA[
+            import mx.collections.ArrayCollection;
+            import mx.controls.Button;
+            
             import sk.yoz.data.describeTypeST.Descriptor;
-            import sk.yoz.data.describeTypeST.DescriptorUtils;
             import sk.yoz.data.describeTypeST.demo.valueObjects.VO1;
             import sk.yoz.data.describeTypeST.demo.valueObjects.VO2;
-            import sk.yoz.data.describeTypeST.elements.AbstractEntry;
-            import sk.yoz.data.describeTypeST.elements.AbstractProperty;
             import sk.yoz.data.describeTypeST.elements.AbstractType;
-            import sk.yoz.data.describeTypeST.elements.Metadata;
             
             import spark.components.List;
             
             private var typeDescriptor:Descriptor = new Descriptor;
             
+            [Bindable]
+            private var dataProvider:ArrayCollection = new ArrayCollection;
+            
+            [Bindable]
+            private var dataProviderTree1:*;
+            
+            [Bindable]
+            private var dataProviderTree2:*;
+            
+            [Bindable]
+            private var dataProviderTree3:*;
+            
             private function init():void
             {
-                var type:AbstractType = describe(List);
-                var list:Vector.<Metadata> = DescriptorUtils.getClassMetadata(type, 
-                    function(metadata:Metadata):Boolean
-                    {
-                        return metadata.name == "Event";
-                    });
-                for each(var metadata:Metadata in list)
-                    trace(metadata.name, metadata.arg[0].value, metadata.arg[1].value);
+                fillDataProvider();
+            }
+            
+            private function fillDataProvider():void
+            {
+                var items:Array = [this, List, Application, Button, DisplayObject,
+                    Descriptor, Object, Class, Number, 123, "hello world", {a:true}, 
+                    VO1, new VO1, VO2, new VO2("hi")];
                 
-                /*
-                var list:Vector.<AbstractEntry> = DescriptorUtils.getEntrieWithMetadata(type1, 
-                    function(entry:AbstractEntry, metadata:Metadata):Boolean
-                    {
-                        return metadata.name == "Event";
-                    });
-                trace("*");
-                for each(var entry:AbstractEntry in list)
-                    trace(entry.name);
-                */
+                for each(var item:* in items)
+                    dataProvider.addItem({label:item is Class ? getQualifiedClassName(item) : item, data:item});
+                    
+                dropDownList.selectedIndex = 0;
+                update();
             }
             
             private function describe(value:Object):AbstractType
             {
                 var d0:Date = new Date;
                 var result:AbstractType = typeDescriptor.describe(value);
-                trace(new Date().time - d0.time + "ms");
-                
+                var d1:Date = new Date;
                 var bytes:ByteArray = new ByteArray;
                 bytes.writeObject(result);
-                trace(bytes.length + "bytes");
-                
+                log("describeTypeSL(): " + (d1.time - d0.time) + " ms, size: " + bytes.length + " bytes");
                 return result;
+            }
+            
+            private function treeProxy(data:*):*
+            {
+                var d0:Date = new Date;
+                var result:* = new DataProxy(data);
+                var d1:Date = new Date;
+                log("TreeProxy: " + (d1.time - d0.time) + " ms");
+                return result;
+            }
+            
+            private function log(value:String):void
+            {
+                textArea.appendText(value + "\n");
+            }
+            
+            private function update():void
+            {
+                var selectedItem:Object = dropDownList.selectedItem;
+                var label:String = selectedItem.label;
+                var data: * = selectedItem.data;
+                log("--- " + label + " ------------------------");
+                var type:AbstractType = describe(data);
+                dataProviderTree1 = describeType(data);
+                dataProviderTree2 = treeProxy(data);
+                dataProviderTree3 = treeProxy(type);
+                log("");
             }
         ]]>
     </fx:Script>
     <s:layout>
         <s:VerticalLayout/>
     </s:layout>
+    <s:HGroup width="100%">
+        <s:DropDownList id="dropDownList" width="100%" dataProvider="{dataProvider}"
+                        change="update()"/>
+    </s:HGroup>
+    <mx:HDividedBox width="100%" height="100%">
+        <s:TextArea id="textArea" width="100%" height="100%" />
+        <s:VGroup width="100%" height="100%">
+            <s:TabBar dataProvider="{viewStack}"/>
+            <mx:ViewStack id="viewStack" width="100%" height="100%">
+                <s:NavigatorContent label="describeType()" width="100%" height="100%">
+                    <s:TextArea width="100%" height="100%" text="{dataProviderTree1}"/>
+                </s:NavigatorContent>
+                
+                <s:NavigatorContent label="describeTypeST()" width="100%" height="100%">
+                    <mx:Tree width="100%" height="100%" dataProvider="{dataProviderTree2}" 
+                             dataDescriptor="{new DataProxyDescriptor}"/>
+                </s:NavigatorContent>
+                
+                <s:NavigatorContent label="describeTypeST(describeTypeST())" width="100%" height="100%">
+                    <mx:Tree width="100%" height="100%" dataProvider="{dataProviderTree3}"
+                             dataDescriptor="{new DataProxyDescriptor}"/>
+                </s:NavigatorContent>
+            </mx:ViewStack>
+        </s:VGroup>
+    </mx:HDividedBox>
     
 </s:Application>

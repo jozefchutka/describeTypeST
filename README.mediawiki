@@ -1,0 +1,1 @@
+describeTypeSL is an open source ActionScript 3 library that takes advantage of describeType() and creates stronlgy typed objects from returned XML.

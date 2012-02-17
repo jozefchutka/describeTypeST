@@ -24,6 +24,7 @@ package sk.yoz.data.describeTypeST
     public class Descriptor
     {
         protected var cachedTypeClasses:Object = {};
+        protected var cachedTypeInstances:Object = {};
         
         public function describe(value:Object):AbstractType
         {
@@ -34,18 +35,29 @@ package sk.yoz.data.describeTypeST
         
         public function describeClass(constructor:Class):TypeClass
         {
+            var className:String = getQualifiedClassName(constructor);
+            if(cachedTypeClasses.hasOwnProperty(className))
+                return cachedTypeClasses[className];
+            
             var description:XML = describeType(constructor);
-            return getTypeClass(description);
+            return getTypeClass(description, constructor, className);
         }
         
         public function describeInstance(instance:Object):TypeInstance
         {
+            var constructor:Class = Object(instance).constructor;
+            var className:String = getQualifiedClassName(constructor);
+            if(cachedTypeInstances.hasOwnProperty(className))
+                return cachedTypeInstances[className];
+            
             var description:XML = describeType(instance);
-            return getTypeInstance(description);
+            return getTypeInstance(description, constructor, className);
         }
         
         public function describeClassName(value:String):TypeClass
         {
+            if(value == "")
+                return null;
             if(cachedTypeClasses.hasOwnProperty(value))
                 return cachedTypeClasses[value];
             var constructor:Class = customGetDefinitionByName(value) as Class;
@@ -60,16 +72,18 @@ package sk.yoz.data.describeTypeST
                 return Vector.<*>;
             if(name == "void")
                 return null;
-            return getDefinitionByName(name);
+            var result:Object;
+            try
+            {
+                // e.g. builtin.as$0::MethodClosure throws error
+                result = getDefinitionByName(name);
+            }
+            catch(error:Error){}
+            return result;
         }
         
-        protected function getTypeClass(data:XML):TypeClass
+        protected function getTypeClass(data:XML, constructor:Class, className:String):TypeClass
         {
-            var constructor:Class = customGetDefinitionByName(data.@name) as Class;
-            var className:String = getQualifiedClassName(constructor);
-            if(cachedTypeClasses.hasOwnProperty(className))
-                return cachedTypeClasses[className];
-            
             var result:TypeClass = cachedTypeClasses[className] = new TypeClass;
             assignAbstractType(result, data);
             result.factory = getFactory(data.factory[0]);
@@ -78,10 +92,9 @@ package sk.yoz.data.describeTypeST
             return result;
         }
         
-        protected function getTypeInstance(data:XML):TypeInstance
+        protected function getTypeInstance(data:XML, constructor:Class, className:String):TypeInstance
         {
-            var constructor:Class = customGetDefinitionByName(data.@name) as Class;
-            var result:TypeInstance = new TypeInstance;
+            var result:TypeInstance = cachedTypeInstances[className] = new TypeInstance;
             assignAbstractType(result, data);
             result._constructor = constructor;
             return result;

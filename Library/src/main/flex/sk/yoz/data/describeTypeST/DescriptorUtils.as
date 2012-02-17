@@ -28,7 +28,24 @@ package sk.yoz.data.describeTypeST
             return result;
         }
         
-        public static function getEntrieWithMetadata(type:AbstractType, filter:Function):Vector.<AbstractEntry>
+        public static function getEntries(type:AbstractType):Vector.<AbstractEntry>
+        {
+            var source:AbstractFactory = type is TypeClass ? TypeClass(type).factory : type;
+            var result:Vector.<AbstractEntry> = new Vector.<AbstractEntry>;
+            var entry:AbstractEntry;
+            if(source.accessor)
+                for each(entry in source.accessor)
+                    result.push(entry);
+            if(source.variable)
+                for each(entry in source.variable)
+                    result.push(entry);
+            if(source.method)
+                for each(entry in source.method)
+                    result.push(entry);
+            return result;
+        }
+        
+        public static function getEntriesWithMetadata(type:AbstractType, filter:Function):Vector.<AbstractEntry>
         {
             var source:AbstractFactory = type is TypeClass ? TypeClass(type).factory : type;
             var result:Vector.<AbstractEntry> = new Vector.<AbstractEntry>;
@@ -51,8 +68,13 @@ package sk.yoz.data.describeTypeST
             if(!list)
                 return;
             for each(var metadata:Metadata in list)
+            {
                 if(filter(entry, metadata))
+                {
                     target.push(entry);
+                    return;
+                }
+            }
         }
         
         public static function getClassMetadata(type:AbstractType, filter:Function):Vector.<Metadata>

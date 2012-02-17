@@ -11,8 +11,9 @@ package sk.yoz.data.describeTypeST.demo.valueObjects
         [Event(name="added", type="starling.events.Event")]
         private var def:Boolean;
         
-        public function VO2()
+        public function VO2(value:String)
         {
+            value;
         }
         
         [Bindable(event="change")]

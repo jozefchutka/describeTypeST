@@ -19,6 +19,7 @@
     <classEntry path="sk.yoz.data.describeTypeST.elements.TypeClass"/>
     <classEntry path="sk.yoz.data.describeTypeST.elements.AbstractProperty"/>
     <classEntry path="sk.yoz.data.describeTypeST.elements.AbstractEntry"/>
+    <classEntry path="sk.yoz.data.describeTypeST.enums.AccessorType"/>
   </includeClasses>
   <includeResources/>
   <namespaceManifests/>

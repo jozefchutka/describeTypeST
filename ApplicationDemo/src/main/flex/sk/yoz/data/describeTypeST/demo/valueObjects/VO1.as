@@ -5,15 +5,16 @@ package sk.yoz.data.describeTypeST.demo.valueObjects
     public dynamic class VO1
     {
         [Bindable]
-        public var pString:String = "";
+        public var pStringNull:String;
+        public var pString:String = "hi there";
         public var pInt:int = 0;
         public var pUint:uint = 1;
         public var pBoolean:Boolean = true;
         public var pClass:Class = VO1;
         public var pObject:Object = {};
         public var pDate:Date = new Date;
-        public var pArray:Array = [];
-        public var pVector:Vector.<Object> = new Vector.<Object>;
+        public var pArray:Array = [1, 2, 3];
+        public var pVector:Vector.<String> = Vector.<String>(["a", "b"]);
         public var pVO1:VO1;
         
         public static var psString:String = "";
