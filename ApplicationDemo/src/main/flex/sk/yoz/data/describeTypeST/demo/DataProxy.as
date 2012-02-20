@@ -3,6 +3,7 @@ package sk.yoz.data.describeTypeST.demo
     import flash.utils.getQualifiedClassName;
     
     import mx.collections.ArrayCollection;
+    import mx.collections.IList;
     
     import sk.yoz.data.describeTypeST.Descriptor;
     import sk.yoz.data.describeTypeST.DescriptorUtils;
@@ -15,9 +16,6 @@ package sk.yoz.data.describeTypeST.demo
     import sk.yoz.data.describeTypeST.elements.TypeClass;
     import sk.yoz.data.describeTypeST.elements.Variable;
     import sk.yoz.data.describeTypeST.enums.AccessorType;
-    
-    import spark.collections.Sort;
-    import spark.collections.SortField;
     
     public class DataProxy
     {
@@ -32,14 +30,16 @@ package sk.yoz.data.describeTypeST.demo
         private var sourceConstructor:Class;
         private var factory:AbstractFactory;
         private var entries:Vector.<AbstractEntry>;
+        private var isVector:Boolean;
         
         public function DataProxy(source:Object, name:String=null)
         {
             this.source = source;
-            sourceConstructor = Object(source).constructor;
+            sourceConstructor = Descriptor.getConstructorByInstance(source);
             this.name = name;
             this.type = descriptor.describe(source);
             this.factory = type is TypeClass ? TypeClass(type).factory : type;
+            isVector = getQualifiedClassName(source).indexOf("::Vector.") > -1;
             entries = DescriptorUtils.getEntries(type);
             label = labelBySource();
         }
@@ -65,39 +65,48 @@ package sk.yoz.data.describeTypeST.demo
         {
             if(_children)
                 return _children;
-                
-            var children:Array = [];
-            addDynamicChildren(children);
-            addVariables(children);
-            addAccessors(children);
-            addMethods(children);
-            if(children.length)
-            {
-                _children = new ArrayCollection(children);
-                sort(_children);
-            }
+            
+            var result:Array = [];
+            var item:Object;
+            var dynamicChildren:Vector.<DataProxy> = addDynamicChildren();
+            for each(item in dynamicChildren)
+                result.push(item);
+            
+            var variables:Vector.<Object> = addVariables();
+            var accessors:Vector.<Object> = addAccessors();
+            variables = variables.concat(accessors);
+            variables.sort(sort);
+            for each(item in variables)
+                result.push(item);
+            
+            var methods:Vector.<Object> = addMethods();
+            methods.sort(sort);
+            for each(item in methods)
+                result.push(item);
+            
+            _children = new ArrayCollection(result);
             return _children;
         }
         
-        private function addDynamicChildren(target:Array):void
+        private function addDynamicChildren():Vector.<DataProxy>
         {
+            var target:Vector.<DataProxy> = new Vector.<DataProxy>;
             for(var key:* in source)
             {
                 var value:* = source[key];
-                var constructor:Class = Object(source).constructor;
-                if(constructor == Array)
-                    target.push(new DataProxy(value, "[" + key + "]"));
-                else if(constructor == Vector.<*>)
+                if(sourceConstructor == Array || isVector)
                     target.push(new DataProxy(value, "[" + key + "]"));
                 else
                     target.push(new DataProxy(value, key));
             }
+            return target;
         }
         
-        private function addAccessors(target:Array):void
+        private function addAccessors():Vector.<Object>
         {
+            var target:Vector.<Object> = new Vector.<Object>;
             if(!factory.accessor)
-                return;
+                return target;
             
             var value:*, isError:Boolean;
             for each(var accessor:Accessor in factory.accessor)
@@ -122,26 +131,30 @@ package sk.yoz.data.describeTypeST.demo
                 if(!isError)
                     addAbstractProperty(target, accessor);
             }
+            return target;
         }
         
-        private function addVariables(target:Array):void
+        private function addVariables():Vector.<Object>
         {
+            var target:Vector.<Object> = new Vector.<Object>;
             if(!factory.variable)
-                return;
+                return target;
             for each(var variable:Variable in factory.variable)
                 addAbstractProperty(target, variable);
+            return target;
         }
         
-        private function addMethods(target:Array):void
+        private function addMethods():Vector.<Object>
         {
+            var target:Vector.<Object> = new Vector.<Object>;
             if(!factory.method)
-                return;
-            
+                return target;
             for each(var method:Method in factory.method)
                 target.push(new DataProxy(source[method.name], method.name));
+            return target;
         }
         
-        private function addAbstractProperty(target:Array, property:AbstractProperty):void
+        private function addAbstractProperty(target:Vector.<Object>, property:AbstractProperty):void
         {
             var value:* = source[property.name];
             target.push(value == null 
@@ -174,8 +187,10 @@ package sk.yoz.data.describeTypeST.demo
                 labelItems.push("Class", source);
             else if(sourceConstructor == Array)
                 labelItems.push("Array (" + source.length +")");
-            else if(sourceConstructor == Vector.<*>)
-                labelItems.push(getQualifiedClassName(source) + "(" + source.length +")");
+            else if(isVector)
+                labelItems.push(getQualifiedClassName(source) + " (" + source.length +")");
+            else if(source is IList)
+                labelItems.push(getQualifiedClassName(source) + " (" + source.length +")");
             else
                 labelItems.push(source);
             return joinLabelItems(labelItems);
@@ -204,12 +219,9 @@ package sk.yoz.data.describeTypeST.demo
             return {label:labelByValues.apply(this, labelItems)};
         }
         
-        private function sort(list:ArrayCollection):void
+        private function sort(a:*, b:*):int
         {
-            var sort:Sort = new Sort();
-            sort.fields = [new SortField("label")];
-            list.sort = sort;
-            list.refresh();
+            return (a.label < b.label) ? -1 : 1;
         }
     }
 }

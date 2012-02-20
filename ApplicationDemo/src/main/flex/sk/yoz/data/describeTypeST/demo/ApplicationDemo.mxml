@@ -5,20 +5,24 @@
                applicationComplete="init()" xmlns:sparkTree="com.sparkTree.*" xmlns:demo="sk.yoz.data.describeTypeST.demo.*">
     <fx:Script>
         <![CDATA[
+            import flash.utils.getQualifiedClassName;
+            import flash.utils.getQualifiedSuperclassName;
+            
             import mx.collections.ArrayCollection;
             import mx.controls.Button;
             
             import sk.yoz.data.describeTypeST.Descriptor;
             import sk.yoz.data.describeTypeST.demo.valueObjects.VO1;
             import sk.yoz.data.describeTypeST.demo.valueObjects.VO2;
+            import sk.yoz.data.describeTypeST.demo.valueObjects.VO3;
             import sk.yoz.data.describeTypeST.elements.AbstractType;
             
             import spark.components.List;
             
-            private var typeDescriptor:Descriptor = new Descriptor;
+            private var typeDescriptor:Descriptor = new Descriptor();
             
             [Bindable]
-            private var dataProvider:ArrayCollection = new ArrayCollection;
+            public var dataProvider:ArrayCollection = new ArrayCollection;
             
             [Bindable]
             private var dataProviderTree1:*;
@@ -36,7 +40,7 @@
             
             private function fillDataProvider():void
             {
-                var items:Array = [this, List, Application, Button, DisplayObject,
+                var items:Array = [new VO3, this, List, Application, Button, DisplayObject,
                     Descriptor, Object, Class, Number, 123, "hello world", {a:true}, 
                     VO1, new VO1, VO2, new VO2("hi")];
                 

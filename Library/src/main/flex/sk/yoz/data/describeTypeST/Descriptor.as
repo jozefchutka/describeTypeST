@@ -23,8 +23,18 @@ package sk.yoz.data.describeTypeST
 
     public class Descriptor
     {
+        public var recursiveExtendsClass:Boolean;
+        public var recursiveDeclaredBy:Boolean;
+        public var recursiveReturnType:Boolean;
+        public var recursiveType:Boolean;
+        
         protected var cachedTypeClasses:Object = {};
         protected var cachedTypeInstances:Object = {};
+        
+        public function Descriptor()
+        {
+            
+        }
         
         public function describe(value:Object):AbstractType
         {
@@ -45,7 +55,7 @@ package sk.yoz.data.describeTypeST
         
         public function describeInstance(instance:Object):TypeInstance
         {
-            var constructor:Class = Object(instance).constructor;
+            var constructor:Class = getConstructorByInstance(instance);
             var className:String = getQualifiedClassName(constructor);
             if(cachedTypeInstances.hasOwnProperty(className))
                 return cachedTypeInstances[className];
@@ -60,26 +70,8 @@ package sk.yoz.data.describeTypeST
                 return null;
             if(cachedTypeClasses.hasOwnProperty(value))
                 return cachedTypeClasses[value];
-            var constructor:Class = customGetDefinitionByName(value) as Class;
+            var constructor:Class = getConstructorByName(value);
             return constructor ? describeClass(constructor) : null;
-        }
-        
-        protected function customGetDefinitionByName(name:String):Object
-        {
-            if(name == "*")
-                return Object;
-            if(name == "__AS3__.vec::Vector.<*>")
-                return Vector.<*>;
-            if(name == "void")
-                return null;
-            var result:Object;
-            try
-            {
-                // e.g. builtin.as$0::MethodClosure throws error
-                result = getDefinitionByName(name);
-            }
-            catch(error:Error){}
-            return result;
         }
         
         protected function getTypeClass(data:XML, constructor:Class, className:String):TypeClass
@@ -88,7 +80,6 @@ package sk.yoz.data.describeTypeST
             assignAbstractType(result, data);
             result.factory = getFactory(data.factory[0]);
             result.constant = getConstantList(data.constant);
-            result._constructor = constructor;
             return result;
         }
         
@@ -96,7 +87,6 @@ package sk.yoz.data.describeTypeST
         {
             var result:TypeInstance = cachedTypeInstances[className] = new TypeInstance;
             assignAbstractType(result, data);
-            result._constructor = constructor;
             return result;
         }
         
@@ -113,7 +103,9 @@ package sk.yoz.data.describeTypeST
         protected function getExtendsClass(data:XML):ExtendsClass
         {
             var result:ExtendsClass = new ExtendsClass;
-            result.type = describeClassName(data.@type);
+            result.type = getConstructorByName(data.@type);
+            if(recursiveExtendsClass)
+                result._type = describeClass(result.type);
             return result;
         }
         
@@ -132,7 +124,9 @@ package sk.yoz.data.describeTypeST
             var result:Accessor = new Accessor;
             assignAbstractProperty(result, data);
             result.access = data.@access;
-            result.declaredBy = describeClassName(data.@declaredBy);
+            result.declaredBy = getConstructorByName(data.@declaredBy);
+            if(recursiveDeclaredBy)
+                result._declaredBy = describeClass(result.declaredBy);
             return result;
         }
         
@@ -150,8 +144,13 @@ package sk.yoz.data.describeTypeST
         {
             var result:Method = new Method;
             assignAbstractEntry(result, data);
-            result.declaredBy = describeClassName(data.@declaredBy);
-            result.returnType = describeClassName(data.@returnType);
+            result.declaredBy = getConstructorByName(data.@declaredBy);
+            if(recursiveDeclaredBy)
+                result._declaredBy = describeClass(result.declaredBy);
+            
+            result.returnType = getConstructorByName(data.@returnType);
+            if(recursiveReturnType)
+                result._returnType = describeClass(result.returnType);
             result.parameter = getParameterList(data.parameter);
             return result;
         }
@@ -161,7 +160,9 @@ package sk.yoz.data.describeTypeST
             if(!data)
                 return null;
             var result:Factory = new Factory;
-            result.type = describeClassName(data.@type);
+            result.type = getConstructorByName(data.@type);
+            if(recursiveType)
+                result._type = describeClass(result.type);
             assignAbstractFactory(result, data);
             return result;
         }
@@ -233,7 +234,9 @@ package sk.yoz.data.describeTypeST
         {
             var result:Parameter = new Parameter;
             result.index = data.@index;
-            result.type = describeClassName(data.@type);
+            result.type = getConstructorByName(data.@type);
+            if(recursiveType)
+                result._type = describeClass(result.type);
             result.optional = data.@optional == "true";
             return result;
         }
@@ -268,7 +271,9 @@ package sk.yoz.data.describeTypeST
         protected function getImplementsInterface(data:XML):ImplementsInterface
         {
             var result:ImplementsInterface = new ImplementsInterface;
-            result.type = describeClassName(data.@type);
+            result.type = getConstructorByName(data.@type);
+            if(recursiveType)
+                result._type = describeClass(result.type);
             return result;
         }
         
@@ -276,7 +281,8 @@ package sk.yoz.data.describeTypeST
         {
             assignAbstractFactory(target, data);
             target.name = data.@name;
-            target.base = describeClassName(data.@base);
+            target.base = getConstructorByName(data.@base);
+            target._base = describeClass(target.base);
             target.isDynamic = data.@isDynamic == "true";
             target.isFinal = data.@isFinal == "true";
             target.isStatic = data.@isStatic == "true";
@@ -295,13 +301,47 @@ package sk.yoz.data.describeTypeST
         protected function assignAbstractProperty(target:AbstractProperty, data:XML):void
         {
             assignAbstractEntry(target, data);
-            target.type = describeClassName(data.@type);
+            target.type = getConstructorByName(data.@type);
+            if(recursiveType)
+                target._type = describeClass(target.type);
         }
         
         protected function assignAbstractEntry(target:AbstractEntry, data:XML):void
         {
             target.name = data.@name;
             target.metadata = getMetadataList(data.metadata);
+        }
+        
+        public static function getConstructorByName(name:String):Class
+        {
+            if(name == "*")
+                return Object;
+            if(name == "__AS3__.vec::Vector.<*>")
+                return getConstructorByName("__AS3__.vec::Vector.<Object>");
+            if(name == "void")
+                return null;
+            var result:Class;
+            try
+            {
+                // e.g. builtin.as$0::MethodClosure throws error
+                result = getDefinitionByName(name) as Class;
+            }
+            catch(error:Error){}
+            return result;
+        }
+        
+        public static function getConstructorByInstance(instance:Object):Class
+        {
+            var constructor:Class;
+            try
+            {
+                constructor = instance.constructor;
+            }
+            catch(error:Error)
+            {
+                return getDefinitionByName(getQualifiedClassName(instance)) as Class;
+            }
+            return constructor;
         }
     }
 }
