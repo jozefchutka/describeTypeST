@@ -2,7 +2,9 @@ package sk.yoz.data.describeTypeST
 {
     import sk.yoz.data.describeTypeST.elements.AbstractEntry;
     import sk.yoz.data.describeTypeST.elements.AbstractFactory;
+    import sk.yoz.data.describeTypeST.elements.AbstractProperty;
     import sk.yoz.data.describeTypeST.elements.AbstractType;
+    import sk.yoz.data.describeTypeST.elements.Arg;
     import sk.yoz.data.describeTypeST.elements.ExtendsClass;
     import sk.yoz.data.describeTypeST.elements.ImplementsInterface;
     import sk.yoz.data.describeTypeST.elements.Metadata;
@@ -15,7 +17,7 @@ package sk.yoz.data.describeTypeST
             var source:AbstractFactory = type is TypeClass ? TypeClass(type).factory : type;
             var result:Vector.<Class> = new Vector.<Class>;
             for each(var extendsClass:ExtendsClass in source.extendsClass)
-                result.push(extendsClass.type._constructor);
+                result.push(extendsClass._type.base);
             return result;
         }
         
@@ -24,7 +26,7 @@ package sk.yoz.data.describeTypeST
             var source:AbstractFactory = type is TypeClass ? TypeClass(type).factory : type;
             var result:Vector.<Class> = new Vector.<Class>;
             for each(var implementsInterface:ImplementsInterface in source.implementsInterface)
-                result.push(implementsInterface.type._constructor);
+                result.push(implementsInterface._type.base);
             return result;
         }
         
@@ -42,6 +44,22 @@ package sk.yoz.data.describeTypeST
             if(source.method)
                 for each(entry in source.method)
                     result.push(entry);
+            return result;
+        }
+        
+        public static function getProperties(type:AbstractType, filter:Function):Vector.<AbstractProperty>
+        {
+            var source:AbstractFactory = type is TypeClass ? TypeClass(type).factory : type;
+            var result:Vector.<AbstractProperty> = new Vector.<AbstractProperty>;
+            var property:AbstractProperty;
+            if(source.accessor)
+                for each(property in source.accessor)
+                    if(filter(property))
+                        result.push(property);
+            if(source.variable)
+                for each(property in source.variable)
+                    if(filter(property))
+                        result.push(property);
             return result;
         }
         
@@ -84,7 +102,7 @@ package sk.yoz.data.describeTypeST
             var metadata:Metadata;
             addClassMetadata(result, source, filter);
             for each(var extendsClass:ExtendsClass in source.extendsClass)
-                addClassMetadata(result, extendsClass.type.factory, filter);
+                addClassMetadata(result, extendsClass._type.factory, filter);
             return result;
         }
         
@@ -96,6 +114,14 @@ package sk.yoz.data.describeTypeST
             for each(var metadata:Metadata in list)
                 if(filter(metadata))
                     target.push(metadata);
+        }
+        
+        public static function getMetadataValueByKey(metadata:Metadata, key:String):String
+        {
+            for each(var item:Arg in metadata.arg)
+                if(item.key == key)
+                    return item.value;
+            return null;
         }
     }
 }
